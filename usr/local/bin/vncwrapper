@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+"""
+Wrapps VNC in a blocking program that can be stopped
+"""
+from __future__ import print_function
+
+import atexit
+import os
+import sys
+from posixpath import expanduser
+from subprocess import CalledProcessError, check_call
+from time import sleep
+
+DISPLAY = os.environ.get('DISPLAY', ':1')
+USER = os.environ.get('USER', 'root')
+
+try:
+    geometry_file = expanduser('~/.vnc/geometry')
+    with open(geometry_file, 'r') as fp:
+        w, h = fp.read().strip().slit('x')  ##
+        if 200 >= int(w) > 4096 or 200 >= int(h) >= 4096:
+            raise AssertionError("with or height invalid")
+except Exception as e:
+    print('Error while readling geomtry file {}: {}'.format(
+        geometry_file,
+        e
+    ))
+    geometry = '800x600'
+
+def kill_vnc_server():
+    try:
+        command = 'vncserver kill {}'.format(DISPLAY)
+        check_call(command.split())
+    except CalledProcessError:
+        print('Error killing vnc server', file=sys.stderr)
+
+atexit.register(kill_vnc_server)
+
+
+command = 'vncserver {DISPLAY} -name lxdevnc -verbose -localhost no -geometry {geometry} -name vnc'.format(
+    geometry=geometry,
+    DISPLAY=DISPLAY
+)
+
+output = check_call(command.split())
+
+print(output)
+
+
+while True:
+    sleep(1)
